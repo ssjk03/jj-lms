@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JJ LMS 알림이</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F2F2F7; margin: 0; padding: 20px; }
+        .card { background: white; border-radius: 13px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .info { display: flex; flex-direction: column; }
+        .title { font-weight: 600; font-size: 15px; color: #1C1C1E; margin-bottom: 4px; }
+        .sub { font-size: 13px; color: #8E8E93; }
+        .dday { font-weight: 700; font-size: 17px; color: #FF3B30; }
+        h1 { font-size: 24px; font-weight: 700; margin-bottom: 20px; color: #000; }
+        .btn { background: #007AFF; color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-size: 17px; font-weight: 600; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>📖 남은 강의</h1>
+    <div id="list">로그인이 필요하거나 데이터를 불러오는 중입니다.</div>
+    <button class="btn" onclick="location.reload()">새로고침</button>
+
+    <script>
+        async function loadData() {
+            try {
+                // 학교 사이트 내부에서 실행될 때만 M.cfg.sesskey 접근 가능
+                // 외부 웹으로 만드실 경우, 학교 사이트 창을 먼저 열어 로그인 상태여야 합니다.
+                if (typeof M === 'undefined') {
+                    document.getElementById('list').innerHTML = "사이버캠퍼스 로그인 후 이 페이지를 실행하세요.";
+                    return;
+                }
+
+                const response = await fetch(`/lib/ajax/service.php?sesskey=${M.cfg.sesskey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify([{ "index": 0, "methodname": "core_calendar_get_action_events_by_courses", "args": {} }])
+                });
+                const res = await response.json();
+                const events = res[0].data.events;
+                
+                let html = '';
+                events.forEach(e => {
+                    const days = Math.ceil((e.timesort - (Date.now()/1000)) / 86400);
+                    if(days >= 0) {
+                        html += `<div class="card">
+                            <div class="info"><span class="title">${e.course.fullname}</span><span class="sub">${e.name}</span></div>
+                            <div class="dday">D-${days}</div>
+                        </div>`;
+                    }
+                });
+                document.getElementById('list').innerHTML = html || "남은 과제가 없어요! 😎";
+            } catch(e) { console.error(e); }
+        }
+        window.onload = loadData;
+    </script>
+</body>
+</html>
